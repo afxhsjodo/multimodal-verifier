@@ -1,0 +1,10 @@
+# ngrok 隧道配置示例。复制为 ngrok.yml 并填入你自己的 authtoken。
+# 用法：在项目根目录执行  ngrok start --config ngrok.yml verifier
+version: 2
+authtoken: PASTE_YOUR_NGROK_AUTHTOKEN
+tunnels:
+  verifier:
+    proto: http
+    addr: 8000
+    # 若在 ngrok Dashboard 申请了免费固定域名，取消注释并填写：
+    # domain: your-name.ngrok-free.dev
