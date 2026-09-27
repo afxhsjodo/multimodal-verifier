@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from langgraph.graph import END, StateGraph
 
-from app.agents import assess, conclude, decompose, plan, retrieve
+from app.agents import assess, conclude, decompose, plan, rerank, retrieve
 from app.agents.state import VerdictState
 
 
@@ -13,12 +13,14 @@ def build_graph():
     g.add_node("retrieval_plan", plan.plan)
     g.add_node("evidence_retrieval", retrieve.retrieve)
     g.add_node("credibility_assess", assess.assess)
+    g.add_node("evidence_rerank", rerank.rerank)
     g.add_node("conclusion", conclude.conclude)
     g.set_entry_point("claim_decompose")
     g.add_edge("claim_decompose", "retrieval_plan")
     g.add_edge("retrieval_plan", "evidence_retrieval")
     g.add_edge("evidence_retrieval", "credibility_assess")
-    g.add_edge("credibility_assess", "conclusion")
+    g.add_edge("credibility_assess", "evidence_rerank")
+    g.add_edge("evidence_rerank", "conclusion")
     g.add_edge("conclusion", END)
     return g.compile()
 
@@ -33,6 +35,7 @@ def new_initial_state(task_id: str, source_text: str, image_paths: list[str], mo
         "retrieval_plan": [],
         "evidences": [],
         "assessment": {},
+        "reranked": {},
         "verdicts": [],
         "trace": [],
         "task_id": task_id,

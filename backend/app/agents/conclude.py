@@ -114,6 +114,13 @@ def conclude(state: dict) -> dict:
     for ev in evidences:
         by_claim.setdefault(ev.claim_id, []).append(ev)
 
+    # 若上游做了证据重排序，则结论只使用被保留的证据子集
+    reranked = state.get("reranked") or {}
+    if reranked:
+        ev_by_id = {e.evidence_id: e for e in evidences}
+        for cid, ids in reranked.items():
+            by_claim[cid] = [ev_by_id[i] for i in ids if i in ev_by_id]
+
     def _one(claim: Claim) -> Verdict:
         evs = by_claim.get(claim.claim_id, [])
         if evs and not llm.is_mock():

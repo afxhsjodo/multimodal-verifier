@@ -30,6 +30,7 @@ class VerdictState(TypedDict):
     retrieval_plan: Annotated[list[RetrievalTask], _merge_list]
     evidences: Annotated[list[Evidence], _merge_list]
     assessment: dict[str, SourceAssessment]  # evidence_id -> 评估
+    reranked: dict[str, list[str]]           # claim_id -> 重排序后保留的 evidence_id
     verdicts: Annotated[list[Verdict], _merge_list]
     trace: Annotated[list[StepLog], _merge_list]
     # 运行信息
