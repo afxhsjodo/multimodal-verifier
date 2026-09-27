@@ -14,11 +14,6 @@ backend/data/tmp_vision.png
 # 环境变量与私密配置（含密钥，绝不提交）
 backend/.env
 .env
-ngrok.yml
-
-# 二进制工具（体积大，clone 后自行下载）
-ngrok.exe
-*.exe
 
 # 前端
 frontend/node_modules/

@@ -156,8 +156,6 @@ multimodal-verifier/
 │   ├── package.json
 │   └── vite.config.js
 ├── start.bat                       # 一键启动（本机 / 局域网）
-├── start-online.bat                # 可选：本机 + ngrok 临时公网暴露
-├── ngrok.yml.example               # 可选：ngrok 配置模板（真实 ngrok.yml 不入库）
 └── README.md
 ```
 
@@ -255,8 +253,6 @@ git pull
 # 若前端有改动：本地 npm run build 后把 frontend/dist 上传到服务器
 sudo systemctl restart verifier
 ```
-
-> 备选：也可用 `start-online.bat`（ngrok 内网穿透）把本机临时暴露到公网，适合无服务器时本地演示。需自行申请 ngrok authtoken 并复制 `ngrok.yml.example` 为 `ngrok.yml`。
 
 ---
 
