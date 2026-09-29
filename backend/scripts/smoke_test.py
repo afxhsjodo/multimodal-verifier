@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.agents.graph import graph, new_initial_state  # noqa: E402
+from app.agents.graph import config_for, graph, new_initial_state  # noqa: E402
 from app.core import llm  # noqa: E402
 
 # 一句话测试样例（含可拆分主张 + 关键词命中文档库）
@@ -23,7 +23,7 @@ SAMPLE = (
 def main() -> None:
     print(f"mock 模式: {llm.is_mock()}")
     initial = new_initial_state("smoke-001", SAMPLE, [], llm.is_mock())
-    state = graph.invoke(initial)
+    state = graph.invoke(initial, config=config_for("smoke-001"))
 
     print("\n=== 主张 ===")
     for c in state["claims"]:

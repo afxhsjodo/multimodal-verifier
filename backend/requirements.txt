@@ -1,6 +1,7 @@
 # ---- 核心 Agent 编排 ----
 langgraph>=0.2.0
 langchain-core>=0.3.0
+langgraph-checkpoint-sqlite>=2.0.0
 
 # ---- LLM 调用（OpenAI 兼容，用于 DeepSeek + DashScope/Qwen-VL）----
 openai>=1.40.0

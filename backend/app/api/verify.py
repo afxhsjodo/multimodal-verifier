@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, File, Form, UploadFile, WebSocket, WebSocketDisconnect
 
-from app.agents.graph import graph, new_initial_state
+from app.agents.graph import config_for, graph, new_initial_state
 from app.core import llm
 from app.core.models import VerifyResult
 from app.db import database
@@ -70,7 +70,7 @@ def verify(
     task_id = f"{int(_t.time())}-{len(text):03d}"
     image_paths = _save_images(task_id, images) if images else []
     initial = new_initial_state(task_id, text, image_paths, llm.is_mock())
-    state = graph.invoke(initial)
+    state = graph.invoke(initial, config=config_for(task_id))
     result = _to_result(state)
     database.save_verification(task_id, text, result.model_dump(), result.mode)
     return result
@@ -96,7 +96,7 @@ async def ws_verify(ws: WebSocket):
     final_state: dict | None = None
     sent: int = 0
     try:
-        async for state_chunk in graph.astream(initial, stream_mode="values"):
+        async for state_chunk in graph.astream(initial, config=config_for(task_id), stream_mode="values"):
             final_state = state_chunk
             trace = state_chunk.get("trace", [])
             for step in trace[sent:]:
