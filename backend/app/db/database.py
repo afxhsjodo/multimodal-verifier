@@ -43,6 +43,15 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS source_trust (
+                source TEXT PRIMARY KEY,
+                distrust INTEGER DEFAULT 0,
+                updated_at TEXT
+            )
+            """
+        )
 
 
 def save_verification(task_id: str, source_text: str, result: dict, mode: str) -> None:
@@ -82,4 +91,19 @@ def list_feedback(task_id: str | None = None) -> list[dict]:
             rows = conn.execute("SELECT * FROM feedback WHERE task_id=? ORDER BY id DESC", (task_id,)).fetchall()
         else:
             rows = conn.execute("SELECT * FROM feedback ORDER BY id DESC").fetchall()
+    return [dict(r) for r in rows]
+
+
+def save_source_trust(source: str, distrust: int) -> None:
+    with _conn() as conn:
+        conn.execute(
+            "INSERT INTO source_trust(source, distrust, updated_at) VALUES(?,?,?) "
+            "ON CONFLICT(source) DO UPDATE SET distrust=excluded.distrust, updated_at=excluded.updated_at",
+            (source, distrust, datetime.now().isoformat(timespec="seconds")),
+        )
+
+
+def list_source_trust() -> list[dict]:
+    with _conn() as conn:
+        rows = conn.execute("SELECT * FROM source_trust ORDER BY distrust DESC").fetchall()
     return [dict(r) for r in rows]

@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import json
 import sys
+import time
+import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -22,8 +24,9 @@ SAMPLE = (
 
 def main() -> None:
     print(f"mock 模式: {llm.is_mock()}")
-    initial = new_initial_state("smoke-001", SAMPLE, [], llm.is_mock())
-    state = graph.invoke(initial, config=config_for("smoke-001"))
+    task_id = f"smoke-{uuid.uuid4().hex[:8]}"
+    initial = new_initial_state(task_id, SAMPLE, [], llm.is_mock())
+    state = graph.invoke(initial, config=config_for(task_id))
 
     print("\n=== 主张 ===")
     for c in state["claims"]:

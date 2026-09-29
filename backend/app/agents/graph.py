@@ -14,6 +14,7 @@ from langgraph.graph import END, StateGraph
 
 from app.agents import assess, conclude, decompose, plan, rerank, retrieve
 from app.agents.state import VerdictState
+from app.core import memory
 from app.core.config import settings
 
 
@@ -25,6 +26,9 @@ def _make_checkpointer() -> SqliteSaver:
 
 
 _checkpointer = _make_checkpointer()
+
+# 启动时把长期记忆（来源可信度）从 SQLite 加载进内存 store
+memory.load_all()
 
 
 def build_graph():
@@ -42,7 +46,7 @@ def build_graph():
     g.add_edge("credibility_assess", "evidence_rerank")
     g.add_edge("evidence_rerank", "conclusion")
     g.add_edge("conclusion", END)
-    return g.compile(checkpointer=_checkpointer)
+    return g.compile(checkpointer=_checkpointer, store=memory.store)
 
 
 def config_for(task_id: str) -> dict:

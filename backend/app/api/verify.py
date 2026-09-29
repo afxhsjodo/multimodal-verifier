@@ -1,8 +1,10 @@
 """核验 API：POST /verify（同步全量） + WS /ws/verify（流式推送 Agent 步骤）。"""
 from __future__ import annotations
 
+import asyncio
 import base64
 import logging
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, UploadFile, WebSocket, WebSocketDisconnect
@@ -67,7 +69,7 @@ def verify(
     """同步核验：接收文本 + 图片，返回完整结论、证据与 Agent 执行轨迹。"""
     import time as _t
 
-    task_id = f"{int(_t.time())}-{len(text):03d}"
+    task_id = f"{int(_t.time())}-{uuid.uuid4().hex[:6]}"
     image_paths = _save_images(task_id, images) if images else []
     initial = new_initial_state(task_id, text, image_paths, llm.is_mock())
     state = graph.invoke(initial, config=config_for(task_id))
@@ -87,16 +89,35 @@ async def ws_verify(ws: WebSocket):
         await ws.close()
         return
 
-    task_id = str(payload.get("task_id") or "ws")
+    task_id = str(payload.get("task_id") or f"ws-{uuid.uuid4().hex[:8]}")
     text = payload.get("text", "")
     image_paths = _save_images_payload(task_id, payload.get("images", [])) or []
     initial = new_initial_state(task_id, text, image_paths, llm.is_mock())
 
-    # 用 astream(stream_mode="values") 逐节点推进，last 即为最终状态，避免重复执行
+    # 用同步 stream（SqliteSaver 仅支持同步）在后台线程执行，经 asyncio 队列边跑边推
     final_state: dict | None = None
     sent: int = 0
+    queue: asyncio.Queue = asyncio.Queue()
+
+    def _run() -> None:
+        try:
+            for chunk in graph.stream(initial, config=config_for(task_id), stream_mode="values"):
+                queue.put_nowait(chunk)
+        except Exception as exc:  # noqa: BLE001
+            queue.put_nowait({"__error__": str(exc)})
+        finally:
+            queue.put_nowait(None)
+
+    loop = asyncio.get_running_loop()
+    loop.run_in_executor(None, _run)
+
     try:
-        async for state_chunk in graph.astream(initial, config=config_for(task_id), stream_mode="values"):
+        while True:
+            state_chunk = await queue.get()
+            if state_chunk is None:
+                break
+            if "__error__" in state_chunk:
+                raise RuntimeError(state_chunk["__error__"])
             final_state = state_chunk
             trace = state_chunk.get("trace", [])
             for step in trace[sent:]:
